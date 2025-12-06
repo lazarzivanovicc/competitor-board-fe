@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competition Board</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Google Material Palette */
+            --google-blue: #1a73e8;
+            --google-blue-hover: #1765cc;
+            --google-red: #ea4335;
+            --google-green: #34a853;
+            --google-yellow: #fbbc04;
+            
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --border-color: #dadce0;
+            --background-page: #f0f2f5;
+            --surface-color: #ffffff;
+            
+            --shadow-1: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+            --shadow-hover: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            background-color: var(--surface-color);
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Google-style Header */
+        h1 {
+            font-size: 2.25rem;
+            font-weight: 400;
+            color: var(--text-primary);
+            margin-bottom: 40px;
+            text-align: center;
+            letter-spacing: -0.5px;
+        }
+        
+        h2 {
+            font-size: 1.375rem;
+            font-weight: 400;
+            color: var(--text-primary);
+            margin-top: 0;
+            margin-bottom: 24px;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        @media (min-width: 800px) {
+            .container {
+                grid-template-columns: 1fr 1fr;
+                align-items: start;
+            }
+        }
+
+        .card {
+            background: var(--surface-color);
+            padding: 24px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-1);
+            border-color: transparent;
+        }
+
+        /* Form Elements */
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-left: 2px;
+        }
+
+        input[type="text"], input[type="password"], select {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+            font-size: 16px;
+            color: var(--text-primary);
+            background-color: #fff;
+            transition: border 0.2s, box-shadow 0.2s;
+        }
+
+        input[type="text"]:focus, input[type="password"]:focus, select:focus {
+            border: 2px solid var(--google-blue);
+            padding: 9px 11px;
+            outline: none;
+        }
+
+        /* Material Button */
+        button {
+            background-color: var(--google-blue);
+            color: white;
+            padding: 10px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Roboto', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.25px;
+            text-transform: uppercase;
+            width: 100%;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--google-blue-hover);
+            box-shadow: 0 1px 2px rgba(60,64,67,0.3);
+        }
+
+        button:active {
+            box-shadow: none;
+            background-color: #1659b1;
+        }
+
+        /* Response Box */
+        #response {
+            margin-top: 20px;
+            padding: 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 1.5;
+            display: none;
+        }
+        
+        #response.active {
+            display: block;
+        }
+
+        .success { 
+            background-color: #e6f4ea; 
+            color: #137333; 
+            border: 1px solid transparent;
+        }
+        
+        .error { 
+            background-color: #fce8e6; 
+            color: #c5221f; 
+            border: 1px solid transparent;
+        }
+
+        /* Leaderboard Styles */
+        #leaderboard-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 8px;
+            border-bottom: 1px solid #f1f3f4;
+            transition: background-color 0.1s;
+        }
+
+        .leaderboard-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .leaderboard-item:last-child {
+            border-bottom: none;
+        }
+
+        .leaderboard-item .rank {
+            font-weight: 500;
+            color: var(--text-secondary);
+            width: 30px;
+            font-size: 14px;
+        }
+
+        .leaderboard-item .username {
+            flex-grow: 1;
+            font-weight: 400;
+            color: var(--text-primary);
+            padding: 0 10px;
+        }
+
+        .leaderboard-item .score {
+            font-weight: 500;
+            color: var(--google-blue);
+            font-size: 14px;
+        }
+
+        .leaderboard-empty {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* Logo coloring */
+        .g-blue { color: #4285F4; }
+        .g-red { color: #EA4335; }
+        .g-yellow { color: #FBBC05; }
+        .g-green { color: #34A853; }
+        
+        /* LOCK SCREEN STYLES */
+        #login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--background-page);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.2s ease-out;
+        }
+
+        #app-content {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        /* SATURDAY LEADERBOARD STYLES */
+        /* SUCCESS: First place (Green) */
+        .leaderboard-item.first-place {
+            border-left: 5px solid var(--google-green);
+            background-color: #e6f4ea; /* Light green background */
+        }
+        .leaderboard-item.first-place .score {
+            color: var(--google-green);
+            font-weight: 700;
+        }
+
+        /* WARNING/LOSS: Last place (Red) */
+        .leaderboard-item.last-place {
+            border-left: 5px solid var(--google-red);
+            background-color: #fce8e6; /* Light red background */
+        }
+        .leaderboard-item.last-place:hover {
+            background-color: #f7e0df; /* Slightly darker hover for red */
+        }
+        .leaderboard-item.last-place .score {
+            color: var(--google-red);
+            font-weight: 700;
+        }
+        
+        .loser-label {
+            font-size: 0.75em;
+            color: var(--google-red);
+            font-weight: 500;
+            margin-left: 10px;
+            padding: 3px 6px;
+            border-radius: 4px;
+            background-color: rgba(234, 67, 53, 0.1); /* Very light red background */
+            white-space: nowrap; /* Keep the label on one line */
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <div class="card" style="width: 100%; max-width: 400px; text-align: center;">
+            <h2 style="margin-bottom: 10px;">Private Board</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">Enter the password to view the results.</p>
+            
+            <form onsubmit="checkPassword(event)">
+                <input type="password" id="passwordInput" placeholder="Password" style="margin-bottom: 20px;" required>
+                <button type="submit">Unlock</button>
+            </form>
+            <div id="login-error" class="error" style="display:none; margin-top:10px;"></div>
+        </div>
+    </div>
+
+    <div id="app-content" class="hidden">
+        
+        <h1>
+            <span class="g-blue">L</span>eet<span class="g-red">C</span>ode <span class="g-yellow">B</span>oard
+        </h1>
+
+        <div class="container">
+            <div class="card">
+                <h2>Submit Solution</h2>
+                <form id="submissionForm">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required placeholder="Enter your username">
+
+                    <label for="url">Problem URL</label>
+                    <input type="text" id="url" name="url" required placeholder="https://leetcode.com/problems/...">
+
+                    <label for="difficulty">Difficulty</label>
+                    <select id="difficulty" name="difficulty" required>
+                        <option value="EASY">Easy</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="HARD">Hard</option>
+                    </select>
+
+                    <button type="submit">Submit</button>
+                </form>
+                <div id="response"></div>
+            </div>
+
+            <div class="card">
+                <h2>Leaderboard</h2>
+                <ul id="leaderboard-list">
+                    <li class="leaderboard-empty">Please unlock the board to load data.</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Set this to the base URL of your FastAPI server
+        const API_BASE_URL = 'https://competition-board-1.onrender.com'; 
+        const authEndpoint = '/primal_auth/';
+        const submitEndpoint = '/submit_solved_problem/';
+        const usersEndpoint = '/users/'; 
+
+        const submissionForm = document.getElementById('submissionForm');
+        const responseDiv = document.getElementById('response');
+        const leaderboardList = document.getElementById('leaderboard-list');
+
+        // --- AUTHENTICATION LOGIC ---
+
+        async function checkPassword(event) {
+            event.preventDefault();
+            const input = document.getElementById('passwordInput').value;
+            const errorDiv = document.getElementById('login-error');
+            const overlay = document.getElementById('login-overlay');
+            const app = document.getElementById('app-content');
+            
+            errorDiv.style.display = 'none';
+
+            try {
+                const response = await fetch(API_BASE_URL + authEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ password: input }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.authorized === true) {
+                    // Password matched
+                    overlay.style.opacity = '0';
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                        app.classList.remove('hidden'); // Reveal main content
+                        fetchLeaderboard(); // Load the data immediately
+                    }, 200);
+
+                } else {
+                    // Password did not match or error was returned
+                    errorDiv.className = 'error';
+                    errorDiv.style.display = 'block';
+                    errorDiv.innerText = "Wrong password. Try again.";
+                }
+
+            } catch (error) {
+                errorDiv.className = 'error';
+                errorDiv.style.display = 'block';
+                errorDiv.innerText = `Network Error: Could not reach server at ${API_BASE_URL}`;
+                console.error('Auth fetch error:', error);
+            }
+        }
+        
+        // --- LEADERBOARD LOGIC ---
+
+        async function fetchLeaderboard() {
+            if (document.getElementById('app-content').classList.contains('hidden')) {
+                leaderboardList.innerHTML = '<li class="leaderboard-empty">Please unlock the board.</li>';
+                return;
+            }
+            
+            leaderboardList.innerHTML = '<li class="leaderboard-empty">Loading data...</li>'; 
+
+            try {
+                const response = await fetch(API_BASE_URL + usersEndpoint);
+                if (!response.ok) throw new Error(`Status: ${response.status}`);
+                
+                const users = await response.json();
+                
+                // Sort users by score in descending order
+                users.sort((a, b) => b.score - a.score);
+
+                leaderboardList.innerHTML = ''; 
+
+                if (users.length === 0) {
+                    leaderboardList.innerHTML = '<li class="leaderboard-empty">No participants yet.</li>';
+                    return;
+                }
+                
+                // Check if today is Saturday (0=Sunday, 6=Saturday)
+                const today = new Date();
+                const isSaturday = today.getDay() === 6;
+                
+                const numUsers = users.length;
+
+                users.forEach((user, index) => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'leaderboard-item';
+                    
+                    let loserLabel = '';
+                    
+                    // Apply classes based on rank and day
+                    if (isSaturday) {
+                        if (index === 0) {
+                            // First Place (Winner)
+                            listItem.classList.add('first-place');
+                        } else if (index === numUsers - 1) {
+                            // Last Place (Loser) - Only mark if there are at least two users
+                            if (numUsers > 1) { 
+                                listItem.classList.add('last-place');
+                                loserLabel = `<span class="loser-label">💸 Pays for next game of pool</span>`;
+                            }
+                        }
+                    }
+                    
+                    listItem.innerHTML = `
+                        <span class="rank">${index + 1}</span>
+                        <span class="username">${user.username} ${loserLabel}</span>
+                        <span class="score">${user.score}</span>
+                    `;
+                    leaderboardList.appendChild(listItem);
+                });
+
+            } catch (error) {
+                leaderboardList.innerHTML = `<li class="leaderboard-empty error">Failed to load leaderboard.</li>`;
+                console.error('Leaderboard error:', error);
+            }
+        }
+
+        // --- SUBMISSION LOGIC ---
+
+        submissionForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const submissionData = {
+                username: document.getElementById('username').value,
+                url: document.getElementById('url').value,
+                difficulty: document.getElementById('difficulty').value
+            };
+
+            responseDiv.className = 'active'; 
+            responseDiv.textContent = 'Submitting...';
+            responseDiv.style.backgroundColor = '#f1f3f4';
+            responseDiv.style.color = '#5f6368';
+
+            try {
+                const response = await fetch(API_BASE_URL + submitEndpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(submissionData),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    responseDiv.className = 'success active';
+                    responseDiv.innerHTML = `<b>Success</b><br>Score updated for ${result.username || submissionData.username}. New Score: ${result.new_score || 'N/A'}`;
+                    fetchLeaderboard(); 
+                } else {
+                    responseDiv.className = 'error active';
+                    responseDiv.innerHTML = `<b>Error</b><br>${result.detail || result.message || 'Unknown error occurred'}`;
+                }
+            } catch (error) {
+                responseDiv.className = 'error active';
+                responseDiv.innerHTML = `<b>Network Error</b><br>Could not reach the API.`;
+                console.error('Fetch error:', error);
+            }
+        });
+    </script>
+
+</body>
+</html>
