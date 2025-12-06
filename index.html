@@ -203,11 +203,39 @@
             padding: 0 10px;
         }
 
+        /* Streak and Score Container */
+        .score-container {
+            display: flex;
+            align-items: center;
+            min-width: 100px;
+            justify-content: flex-end;
+        }
+        
         .leaderboard-item .score {
             font-weight: 500;
             color: var(--google-blue);
             font-size: 14px;
+            margin-left: 8px;
         }
+
+        /* --- STREAK BADGE STYLE (NEW) --- */
+        .streak-badge {
+            background-color: var(--google-yellow);
+            color: var(--text-primary);
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 12px; /* Pill shape */
+            margin-right: 8px;
+            display: inline-flex;
+            align-items: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .streak-badge::before {
+            content: '🔥'; /* Fire emoji icon */
+            margin-right: 4px;
+        }
+
 
         .leaderboard-empty {
             text-align: center;
@@ -252,7 +280,7 @@
         /* SUCCESS: First place (Green) */
         .leaderboard-item.first-place {
             border-left: 5px solid var(--google-green);
-            background-color: #e6f4ea; /* Light green background */
+            background-color: #e6f4ea; 
         }
         .leaderboard-item.first-place .score {
             color: var(--google-green);
@@ -262,10 +290,10 @@
         /* WARNING/LOSS: Last place (Red) */
         .leaderboard-item.last-place {
             border-left: 5px solid var(--google-red);
-            background-color: #fce8e6; /* Light red background */
+            background-color: #fce8e6; 
         }
         .leaderboard-item.last-place:hover {
-            background-color: #f7e0df; /* Slightly darker hover for red */
+            background-color: #f7e0df; 
         }
         .leaderboard-item.last-place .score {
             color: var(--google-red);
@@ -279,8 +307,8 @@
             margin-left: 10px;
             padding: 3px 6px;
             border-radius: 4px;
-            background-color: rgba(234, 67, 53, 0.1); /* Very light red background */
-            white-space: nowrap; /* Keep the label on one line */
+            background-color: rgba(234, 67, 53, 0.1); 
+            white-space: nowrap; 
         }
 
     </style>
@@ -340,7 +368,8 @@
 
     <script>
         // Set this to the base URL of your FastAPI server
-        const API_BASE_URL = 'https://competition-board-1.onrender.com'; 
+        // const API_BASE_URL = 'http://127.0.0.1:8000'; 
+        const API_BASE_URL = 'https://competition-board.onrender.com'; 
         const authEndpoint = '/primal_auth/';
         const submitEndpoint = '/submit_solved_problem/';
         const usersEndpoint = '/users/'; 
@@ -395,7 +424,7 @@
             }
         }
         
-        // --- LEADERBOARD LOGIC ---
+        // --- LEADERBOARD LOGIC (MODIFIED) ---
 
         async function fetchLeaderboard() {
             if (document.getElementById('app-content').classList.contains('hidden')) {
@@ -447,10 +476,18 @@
                         }
                     }
                     
+                    // --- NEW STREAK LOGIC IN DISPLAY ---
+                    const streakBadge = user.current_streak && user.current_streak > 0 
+                        ? `<span class="streak-badge">${user.current_streak}</span>`
+                        : '';
+                    
                     listItem.innerHTML = `
                         <span class="rank">${index + 1}</span>
                         <span class="username">${user.username} ${loserLabel}</span>
-                        <span class="score">${user.score}</span>
+                        <span class="score-container">
+                            ${streakBadge}
+                            <span class="score">${user.score}</span>
+                        </span>
                     `;
                     leaderboardList.appendChild(listItem);
                 });
@@ -461,7 +498,7 @@
             }
         }
 
-        // --- SUBMISSION LOGIC ---
+        // --- SUBMISSION LOGIC (MODIFIED) ---
 
         submissionForm.addEventListener('submit', async function(event) {
             event.preventDefault();
@@ -488,7 +525,16 @@
 
                 if (response.ok) {
                     responseDiv.className = 'success active';
-                    responseDiv.innerHTML = `<b>Success</b><br>Score updated for ${result.username || submissionData.username}. New Score: ${result.new_score || 'N/A'}`;
+                    
+                    const streakText = result.current_streak > 0 
+                        ? `<br>🔥 Streak: ${result.current_streak} days` 
+                        : '';
+                    
+                    responseDiv.innerHTML = `
+                        <b>Success!</b><br>
+                        Score updated for ${result.username || submissionData.username}. New Score: ${result.new_score || 'N/A'}
+                        ${streakText}
+                    `;
                     fetchLeaderboard(); 
                 } else {
                     responseDiv.className = 'error active';
@@ -499,6 +545,11 @@
                 responseDiv.innerHTML = `<b>Network Error</b><br>Could not reach the API.`;
                 console.error('Fetch error:', error);
             }
+        });
+        
+        // Ensure authentication logic is checked on load
+        document.addEventListener('DOMContentLoaded', () => {
+             // If you want it unlocked for testing, remove the checkPassword() call here
         });
     </script>
 
