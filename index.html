@@ -198,9 +198,15 @@
 
         .leaderboard-item .username {
             flex-grow: 1;
-            font-weight: 400;
+            font-weight: 500; /* Made slightly bolder */
             color: var(--text-primary);
             padding: 0 10px;
+            cursor: pointer; /* Indicate clickable */
+            text-decoration: none; /* Removed underline */
+        }
+        
+        .leaderboard-item .username:hover {
+            color: var(--google-blue); /* Highlight on hover */
         }
 
         /* Streak and Score Container */
@@ -310,6 +316,93 @@
             background-color: rgba(234, 67, 53, 0.1); 
             white-space: nowrap; 
         }
+        
+        /* --- MODAL STYLES (NEW) --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--surface-color);
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: var(--shadow-hover);
+            transform: scale(0.9);
+            transition: transform 0.3s ease-out;
+        }
+        
+        .modal-overlay.visible .modal-content {
+            transform: scale(1);
+        }
+        
+        .modal-content h3 {
+            margin-top: 0;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            font-weight: 500;
+            color: var(--google-blue);
+        }
+        
+        .problem-list {
+            list-style: none;
+            padding: 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .problem-list li {
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+            font-size: 15px;
+        }
+        
+        .problem-list li:last-child {
+            border-bottom: none;
+        }
+
+        .problem-list a {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.1s;
+        }
+        
+        .problem-list a:hover {
+            color: var(--google-blue-hover);
+            text-decoration: underline;
+        }
+
+        .problem-difficulty {
+            float: right;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .difficulty-EASY { background-color: #e6f4ea; color: var(--google-green); }
+        .difficulty-MEDIUM { background-color: #fce8e6; color: var(--google-yellow); } /* Yellow tint */
+        .difficulty-HARD { background-color: #fce8e6; color: var(--google-red); }
 
     </style>
 </head>
@@ -365,6 +458,16 @@
         </div>
 
     </div>
+    
+    <div id="problemsModal" class="modal-overlay" onclick="closeProblemsModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 id="modalTitle">Solved Problems for User</h3>
+            <ul id="problemListContent" class="problem-list">
+                </ul>
+            <button onclick="closeProblemsModal()" style="margin-top: 20px;">Close</button>
+        </div>
+    </div>
+
 
     <script>
         // Set this to the base URL of your FastAPI server
@@ -377,6 +480,11 @@
         const submissionForm = document.getElementById('submissionForm');
         const responseDiv = document.getElementById('response');
         const leaderboardList = document.getElementById('leaderboard-list');
+        
+        // Modal Elements (NEW)
+        const problemsModal = document.getElementById('problemsModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const problemListContent = document.getElementById('problemListContent');
 
         // --- AUTHENTICATION LOGIC ---
 
@@ -424,6 +532,61 @@
             }
         }
         
+        // --- MODAL LOGIC (NEW) ---
+
+        function closeProblemsModal(event) {
+            if (event && event.target !== problemsModal) {
+                return; // Only close if the overlay itself is clicked
+            }
+            problemsModal.classList.remove('visible');
+        }
+
+        async function fetchUserProblems(username) {
+            modalTitle.innerText = `Loading problems for ${username}...`;
+            problemListContent.innerHTML = '<li style="text-align: center; color: var(--text-secondary);">Loading...</li>';
+            problemsModal.classList.add('visible');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}${usersEndpoint}${username}/problems/`);
+                if (!response.ok) throw new Error(`Status: ${response.status}`);
+                
+                const problems = await response.json();
+                
+                showProblemsModal(username, problems);
+
+            } catch (error) {
+                modalTitle.innerText = `Error fetching problems for ${username}`;
+                problemListContent.innerHTML = `<li style="text-align: center; color: var(--google-red);">Failed to load problems. User may not exist or network error.</li>`;
+                console.error(`Fetch user problems error for ${username}:`, error);
+            }
+        }
+        
+        function showProblemsModal(username, problems) {
+            modalTitle.innerText = `Solved Problems by ${username}`;
+            problemListContent.innerHTML = '';
+            
+            if (problems.length === 0) {
+                problemListContent.innerHTML = `<li style="text-align: center; color: var(--text-secondary);">No solved problems recorded yet.</li>`;
+                return;
+            }
+            
+            problems.forEach(problem => {
+                const listItem = document.createElement('li');
+                const difficultyClass = `difficulty-${problem.difficulty}`;
+                const problemName = problem.url; // Basic attempt to get problem name
+                
+                listItem.innerHTML = `
+                    <span class="problem-difficulty ${difficultyClass}">${problem.difficulty}</span>
+                    <a href="${problem.url}" target="_blank" rel="noopener noreferrer">
+                        ${problemName}
+                    </a>
+                `;
+                problemListContent.appendChild(listItem);
+            });
+            
+            problemsModal.classList.add('visible');
+        }
+
         // --- LEADERBOARD LOGIC (MODIFIED) ---
 
         async function fetchLeaderboard() {
@@ -483,12 +646,22 @@
                     
                     listItem.innerHTML = `
                         <span class="rank">${index + 1}</span>
-                        <span class="username">${user.username} ${loserLabel}</span>
+                        <span class="username" data-username="${user.username}">${user.username} ${loserLabel}</span>
                         <span class="score-container">
                             ${streakBadge}
                             <span class="score">${user.score}</span>
                         </span>
                     `;
+                    
+                    // --- NEW CLICK LISTENER ADDED HERE ---
+                    const usernameSpan = listItem.querySelector('.username');
+                    usernameSpan.addEventListener('click', (e) => {
+                        // Prevent the default link behavior if it were a link
+                        e.preventDefault(); 
+                        const clickedUsername = e.currentTarget.getAttribute('data-username');
+                        fetchUserProblems(clickedUsername);
+                    });
+                    
                     leaderboardList.appendChild(listItem);
                 });
 
